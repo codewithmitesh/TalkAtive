@@ -1,5 +1,6 @@
 // Connecting the client side with socket.io to use socket.io in client side also ths is must need 
 const socket = io()
+// import { DoEncrypt, DoDecrypt } from './aes'
 
 // Holding the message input fields in variables for easy access
 const $messageForm = document.querySelector('#message-form')
@@ -49,10 +50,22 @@ const autoscroll = () => {
  */
 socket.on('message', (message) => {
     console.log(message)
+    /**
+     * Write decryption of message.text part here:- 
+     * 
+     * 
+     */
+    var decrypted = CryptoJS.AES.decrypt(message.text, "Secret Passphrase");
+    var decryptedRecieved = decrypted.toString(CryptoJS.enc.Utf8);
+
+    console.log("");
+    console.log("Decrypted Message is " + decryptedRecieved);
+
+
     // Rendering the Message Templates using mustache library 
     const html = Mustache.render(messageTemplate, {
         username: message.username,
-        message: message.text,
+        message: decryptedRecieved,
         // Using the MomentJS library to format the date and time
         createdAt: moment(message.createdAt).format('h:mm a')
     })
@@ -91,10 +104,18 @@ $messageForm.addEventListener('submit', (e) => {
     // holding the typed msg in message variable  
     const message = e.target.elements.message.value
     /**
+     * Encrypt the message here
+     */
+    // const emcryptedMessage = DoEncrypt(message);
+    var encryptedMessage = CryptoJS.AES.encrypt(message, "Secret Passphrase");
+    // console.log(encryptedMessage.toString());
+    var encryptedSend = encryptedMessage.toString();
+
+    /**
      * sending an event to server with data stored in message variable 
      * this event will be recieved by the server and will send the message to all active client in realtime
      * */
-    socket.emit('sendMessage', message, (error) => {
+    socket.emit('sendMessage', encryptedSend, (error) => {
         // Again enable the send button and clearing the input field of message 
         $messageFormButton.removeAttribute('disabled')
         $messageFormInput.value = ''
